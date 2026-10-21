@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rodage: burn-in, proven</title>
+  <meta name="description" content="Rodage is an open, vendor-neutral tool for DC Ops teams: run burn-in on GPU racks, see every result on the rack and FRU, and hand over proof.">
+  <meta property="og:title" content="Rodage: burn-in, proven">
+  <meta property="og:description" content="Open, vendor-neutral test execution for GPU data centers.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #faf8f5; --surface: #ffffff; --surface-2: #f1ede7; --text: #1a1714; --muted: #6b635b; --line: #e4ddd3;
+      --ember: #e8532a; --ember-2: #f59a3c; --ok: #2e9d62; --warn: #d99a1b; --fail: #d6453d; --repair: #8a5cd6;
+      --rack: #23201d; --tray: #3a3530; --code-bg: #1d1a17; --code-text: #f3ece3;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0f0e0d; --surface: #181614; --surface-2: #211e1b; --text: #f3ece3; --muted: #a59b90; --line: #2f2a26;
+        --rack: #0a0908; --tray: #2a2622; --code-bg: #141210;
+      }
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; overflow-x: hidden; background: var(--bg); color: var(--text); font: 17px/1.6 Inter, system-ui, sans-serif; }
+    a { color: var(--ember); }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+    h1, h2, h3 { font-family: "Space Grotesk", Inter, sans-serif; line-height: 1.15; margin: 0; }
+    code, pre { font-family: "JetBrains Mono", ui-monospace, monospace; }
+
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 20px 0; }
+    .logo { display: flex; align-items: center; gap: 10px; font-family: "Space Grotesk"; font-weight: 700; font-size: 22px; color: var(--text); text-decoration: none; }
+    nav .links { display: flex; gap: 24px; font-size: 15px; }
+    nav .links a { color: var(--muted); text-decoration: none; }
+    nav .links a:hover { color: var(--text); }
+
+    .hero { display: grid; grid-template-columns: minmax(0,1.1fr) minmax(0,0.9fr); gap: 48px; align-items: center; padding: 56px 0 72px; }
+    .eyebrow { display: inline-block; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ember); margin-bottom: 16px; }
+    .hero h1 { font-size: clamp(44px, 6vw, 72px); letter-spacing: -0.02em; }
+    .hero h1 span { background: linear-gradient(90deg, var(--ember), var(--ember-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .lead { font-size: 20px; color: var(--muted); margin: 20px 0 32px; max-width: 34em; }
+    .cta { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn { display: inline-block; padding: 13px 22px; border-radius: 10px; font-weight: 600; text-decoration: none; font-size: 16px; }
+    .btn.primary { background: var(--ember); color: #fff; }
+    .btn.primary:hover { background: #d1441e; }
+    .btn.ghost { border: 1px solid var(--line); color: var(--text); }
+    .btn.ghost:hover { background: var(--surface-2); }
+    .pron { margin-top: 18px; font-size: 14px; color: var(--muted); }
+
+    .rack-card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px; box-shadow: 0 20px 50px rgba(0,0,0,.08); }
+    .rack-card .bar { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+    .rack-card .bar b { color: var(--text); font-family: "JetBrains Mono"; font-weight: 500; }
+    .stage { font-family: "JetBrains Mono"; font-size: 13px; color: var(--muted); margin-top: 12px; min-height: 1.6em; }
+    .stage b { color: var(--ember); font-weight: 500; }
+    .legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-top: 10px; flex-wrap: wrap; }
+    .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; }
+
+    section { padding: 72px 0; border-top: 1px solid var(--line); }
+    .section-head { max-width: 680px; margin-bottom: 40px; }
+    .section-head h2 { font-size: clamp(30px, 4vw, 42px); letter-spacing: -0.01em; }
+    .section-head p { color: var(--muted); font-size: 18px; margin: 14px 0 0; }
+
+    .problem { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .problem div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+    .problem h3 { font-size: 18px; margin-bottom: 8px; }
+    .problem p { margin: 0; color: var(--muted); font-size: 15px; }
+
+    .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; counter-reset: s; }
+    .steps div { padding: 0 22px 0 0; position: relative; }
+    .steps div::before { counter-increment: s; content: counter(s, decimal-leading-zero); display: block; font-family: "JetBrains Mono"; color: var(--ember); font-size: 14px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 2px solid var(--line); }
+    .steps h3 { font-size: 22px; margin-bottom: 8px; }
+    .steps p { margin: 0; color: var(--muted); font-size: 15px; }
+
+    .split { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 40px; align-items: start; }
+    pre { background: var(--code-bg); color: var(--code-text); border-radius: 14px; padding: 22px; font-size: 13.5px; line-height: 1.65; overflow-x: auto; margin: 0; }
+    pre .c { color: #8c8278; } pre .k { color: #f59a3c; } pre .s { color: #9fd4a8; } pre .p { color: #e8532a; }
+    .terminal { margin-top: 16px; }
+
+    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+    .features div { background: var(--surface); padding: 26px; }
+    .features h3 { font-size: 18px; margin-bottom: 8px; }
+    .features p { margin: 0; color: var(--muted); font-size: 15px; }
+    .features svg { width: 28px; height: 28px; margin-bottom: 14px; color: var(--ember); }
+
+    .who { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .who div { border-left: 3px solid var(--ember); padding: 4px 0 4px 16px; }
+    .who h3 { font-size: 17px; margin-bottom: 6px; }
+    .who p { margin: 0; color: var(--muted); font-size: 15px; }
+
+    .status { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 40px; display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: center; }
+    .status h2 { font-size: 32px; }
+    .status p { color: var(--muted); margin: 10px 0 0; max-width: 36em; }
+    .timeline { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+    .timeline span { font-size: 13px; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--line); color: var(--muted); }
+    .timeline span.now { border-color: var(--ember); color: var(--ember); font-weight: 600; }
+
+    footer { padding: 40px 0 56px; color: var(--muted); font-size: 14px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    footer i { font-style: normal; }
+
+    @media (max-width: 900px) {
+      .hero, .split, .status { grid-template-columns: minmax(0,1fr); }
+      .problem, .features { grid-template-columns: minmax(0,1fr); }
+      .steps, .who { grid-template-columns: 1fr 1fr; gap: 28px; }
+      nav .links { display: none; }
+    }
+    @media (max-width: 520px) { .steps, .who { grid-template-columns: 1fr; } .wrap { padding: 0 16px; } .status { padding: 26px; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav>
+      <a class="logo" href="#"><svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="3" width="22" height="26" rx="3" fill="#23201d"/><rect x="8" y="7" width="16" height="3" rx="1" fill="#2e9d62"/><rect x="8" y="12" width="16" height="3" rx="1" fill="#2e9d62"/><rect x="8" y="17" width="16" height="3" rx="1" fill="#f59a3c"/><rect x="8" y="22" width="16" height="3" rx="1" fill="#e8532a"/></svg>Rodage</a>
+      <div class="links"><a href="#how">How it works</a><a href="#features">Features</a><a href="#who">Who it's for</a><a href="#status">Status</a></div>
+    </nav>
+
+    <header class="hero">
+      <div>
+        <span class="eyebrow">Open source · Vendor-neutral · For DC Ops</span>
+        <h1>Burn-in,<br><span>proven.</span></h1>
+        <p class="lead">Rodage runs burn-in tests on your GPU racks, shows every result on the rack and the exact part, and leaves a record you can hand to a customer, a vendor or an auditor.</p>
+        <div class="cta">
+          <a class="btn primary" href="https://github.com/vjoise/rodage">Follow on GitHub</a>
+          <a class="btn ghost" href="#how">See how it works</a>
+        </div>
+        <p class="pron"><em>rodage</em> (roh-DAHZH): French for <em>breaking in</em>, the running-in of new machinery before it goes to work.</p>
+      </div>
+
+      <div class="rack-card" aria-label="Animated example of a burn-in run on a GB200 NVL72 rack">
+        <div class="bar"><span>Rack <b>B02</b> · GB200 NVL72</span><span id="progress">stage 1 of 4</span></div>
+        <svg id="rack" viewBox="0 0 300 380" role="img" aria-label="Rack elevation with trays changing color as tests complete"></svg>
+        <div class="stage" id="stage">$ rdg run rack B02 --profile gb200-burnin</div>
+        <div class="legend"><span><i style="background:var(--ok)"></i>Passed</span><span><i style="background:var(--warn)"></i>Warning</span><span><i style="background:var(--fail)"></i>Failed</span><span><i style="background:var(--tray)"></i>Pending</span></div>
+      </div>
+    </header>
+  </div>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Bringing up a GPU rack is still run on spreadsheets.</h2>
+        <p>New hardware has to be burned in before it carries real work. Today the evidence for that lives in a dozen places, and none of them agree.</p>
+      </div>
+      <div class="problem">
+        <div><h3>Where is it?</h3><p>Rack, U position and cabling live in spreadsheets and DCIM tools that drift from the floor.</p></div>
+        <div><h3>What failed?</h3><p>Test logs name a hostname and a GPU index, not the tray, slot and serial a technician has to pull.</p></div>
+        <div><h3>Can we prove it?</h3><p>Acceptance, RMA cases and handovers rely on screenshots and PDFs that nobody can check later.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>How it works</h2>
+        <p>One definition of your site, one run command, one record of what happened.</p>
+      </div>
+      <div class="steps">
+        <div><h3>Define</h3><p>Describe the floor, racks and cabling in plain YAML, or import them from NetBox or a spreadsheet. Shapes such as DGX B200 or GB200 NVL72 come from a shared catalog.</p></div>
+        <div><h3>Run</h3><p>Pick a burn-in profile and run it on a host, a rack or a row. Rodage drives the tools you already trust: DCGM, NCCL tests, nvme-cli and Redfish.</p></div>
+        <div><h3>See</h3><p>Results land on the rack as you watch. Each tray, GPU, drive and power supply turns green, amber or red, with the error and its history one click away.</p></div>
+        <div><h3>Prove</h3><p>Every run becomes an append-only record with serials, firmware and log hashes: an acceptance report, an RMA packet or a supplier handover.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap split">
+      <div class="section-head" style="margin:0">
+        <h2>Readable by people. Runnable by machines.</h2>
+        <p>A burn-in profile says what to test and what passing means. It is versioned, so every result points at the exact rules it was judged by, and two sites running the same profile get comparable answers.</p>
+        <p>Pass thresholds can be absolute or relative to your fleet, so a GPU at 90% of its neighbors' bandwidth is flagged before it slows a training job.</p>
+      </div>
+      <div>
+<pre><span class="c"># profiles/gb200-burnin.yaml</span>
+<span class="k">kind</span>: BurnInProfile
+<span class="k">metadata</span>: { <span class="k">name</span>: gb200-burnin, <span class="k">version</span>: <span class="s">3</span> }
+<span class="k">spec</span>:
+  <span class="k">shape</span>: nvidia-gb200-nvl72
+  <span class="k">stages</span>:
+    - <span class="k">name</span>: gpu-diagnostics
+      <span class="k">tool</span>: dcgm-diag
+      <span class="k">pass</span>: { <span class="k">level</span>: <span class="s">3</span>, <span class="k">xidErrors</span>: <span class="s">0</span> }
+    - <span class="k">name</span>: nccl-allreduce
+      <span class="k">tool</span>: nccl-tests
+      <span class="k">warn</span>: { <span class="k">busBw</span>: <span class="s">"&lt; 95% of fleet median"</span> }
+      <span class="k">fail</span>: { <span class="k">busBw</span>: <span class="s">"&lt; 85% of fleet median"</span> }
+    - <span class="k">name</span>: power-redundancy
+      <span class="k">tool</span>: redfish-psu-check</pre>
+<pre class="terminal"><span class="p">$</span> rdg run rack B02 --profile gb200-burnin
+<span class="c">  gpu-diagnostics   72/72 GPUs   </span><span class="s">pass</span>
+<span class="c">  nccl-allreduce    18/18 trays  </span><span class="k">warn</span><span class="c">  b02-ct5 gpu2 at 90.5%</span>
+<span class="c">  power-redundancy  48/48 PSUs   </span><span class="s">pass</span>
+<span class="c">  report → evidence/B02/2026-11-18.json  (sha256 9f2c…)</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Built for the people on the floor</h2>
+        <p>Rodage shows where hardware is, what it is made of and what happened to it. It does not try to replace your monitoring.</p>
+      </div>
+      <div class="features">
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg><h3>Every part, in place</h3><p>Racks are drawn as their real shape, and trays as their field-replaceable units, so a failure points at a slot and a serial.</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><h3>History that follows the part</h3><p>Tests, reseats, swaps and RMAs stay attached to both the slot and the serial, even after the part moves.</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg><h3>Swap it, or open a case</h3><p>Each part is marked customer-replaceable or vendor-serviced, with a link to the service manual.</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4z"/></svg><h3>Evidence you can check</h3><p>Records are append-only, with log hashes and optional signatures, so a result can be trusted months later.</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h10"/></svg><h3>Works with what you have</h3><p>Import from NetBox or CSV, link tickets in Jira or ServiceNow, and export topology for Slurm and NCCL.</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.3 11l7.4-3.8M8.3 13l7.4 3.8"/></svg><h3>Open and vendor-neutral</h3><p>NVIDIA, AMD and OEM servers in one view. Planned under Apache 2.0, with an open spec anyone can implement.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="who">
+    <div class="wrap">
+      <div class="section-head"><h2>Who it's for</h2></div>
+      <div class="who">
+        <div><h3>GPU clouds</h3><p>Fast-growing fleets with small Ops teams and no time for spreadsheets.</p></div>
+        <div><h3>Colocation providers</h3><p>Hosting GPU customers who want proof their racks are healthy.</p></div>
+        <div><h3>HPC and research centers</h3><p>University and lab clusters that prefer open tools they can inspect.</p></div>
+        <div><h3>System integrators</h3><p>Ship racks with burn-in evidence the customer can re-run and compare.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="status">
+    <div class="wrap">
+      <div class="status">
+        <div>
+          <h2>Early and in the open</h2>
+          <p>Rodage is in early development. A working prototype covers the site definition, the rack and FRU console, and a validator. Test execution is next. If you run GPU hardware and want to shape what gets built, get in touch.</p>
+          <div class="timeline"><span class="now">Prototype · now</span><span>v0.1 · early 2027</span><span>v1.0 · late 2027</span></div>
+        </div>
+        <a class="btn primary" id="contact" href="https://github.com/vjoise/rodage/discussions">Join the discussion</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <footer><span>© 2026 Rodage</span><span>Burn-in, proven. <i>·</i> <a href="https://github.com/vjoise/rodage">GitHub</a></span></footer>
+  </div>
+
+  <script>
+    // Animated burn-in run on a GB200 NVL72-style rack: 4 power shelves, 8 trays, 9 switch trays, 10 trays, 4 shelves.
+    (function () {
+      const svg = document.getElementById('rack');
+      const layout = [['ps', 4], ['ct', 8], ['nvs', 9], ['ct', 10], ['ps', 4]];
+      const rowH = 9.2, gap = 5, x = 40, w = 220;
+      let y = 8, i = 0, html = `<rect x="28" y="0" width="244" height="380" rx="8" fill="var(--rack)"/>`;
+      const units = [];
+      for (const [kind, n] of layout) {
+        for (let k = 0; k < n; k++) {
+          const id = `u${i++}`;
+          units.push({ id, kind });
+          html += `<rect id="${id}" x="${x}" y="${y}" width="${w}" height="${rowH - 2}" rx="1.5" fill="var(--tray)"/>`;
+          if (kind === 'ct') for (let g = 0; g < 4; g++) html += `<rect x="${x + 120 + g * 24}" y="${y + 1.8}" width="18" height="${rowH - 5.6}" rx="1" fill="rgba(255,255,255,.12)"/>`;
+          y += rowH;
+        }
+        y += gap;
+      }
+      svg.innerHTML = html;
+      const stages = [
+        ['gpu-diagnostics', (u) => u.kind === 'ct'],
+        ['nccl-allreduce', (u) => u.kind === 'ct' || u.kind === 'nvs'],
+        ['storage-health', (u) => u.kind === 'ct'],
+        ['power-redundancy', (u) => u.kind === 'ps'],
+      ];
+      const warnAt = 'u8', failAt = 'u33'; // ct5 warns on NCCL bandwidth; one power shelf fails
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const color = (u, s) => (s === 1 && u.id === warnAt ? 'var(--warn)' : s === 3 && u.id === failAt ? 'var(--fail)' : 'var(--ok)');
+      const final = {};
+      function paint(s, done) {
+        for (const u of units.filter(stages[s][1])) {
+          const c = color(u, s);
+          if (final[u.id] === 'var(--fail)' || (final[u.id] === 'var(--warn)' && c === 'var(--ok)')) continue;
+          final[u.id] = c;
+        }
+        for (const u of units.slice(0, done)) if (final[u.id]) document.getElementById(u.id).setAttribute('fill', final[u.id]);
+      }
+      if (reduce) { stages.forEach((_, s) => paint(s, units.length)); document.getElementById('stage').innerHTML = '4 stages done · <b>1 warning, 1 failure</b>'; document.getElementById('progress').textContent = 'complete'; return; }
+      let s = 0;
+      function runStage() {
+        document.getElementById('progress').textContent = `stage ${s + 1} of ${stages.length}`;
+        document.getElementById('stage').innerHTML = `running <b>${stages[s][0]}</b>…`;
+        let n = 0;
+        const t = setInterval(() => {
+          n += 3;
+          paint(s, Math.min(n, units.length));
+          if (n >= units.length) {
+            clearInterval(t);
+            s++;
+            if (s < stages.length) setTimeout(runStage, 500);
+            else {
+              document.getElementById('stage').innerHTML = 'done · <b>1 warning, 1 failure</b> · report saved';
+              document.getElementById('progress').textContent = 'complete';
+              setTimeout(() => { s = 0; for (const k in final) delete final[k]; units.forEach((u) => document.getElementById(u.id).setAttribute('fill', 'var(--tray)')); runStage(); }, 5000);
+            }
+          }
+        }, 70);
+      }
+      setTimeout(runStage, 600);
+    })();
+  </script>
+</body>
+</html>
