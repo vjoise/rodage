@@ -2,33 +2,16 @@
   <a href="https://vjoise.github.io/rodage/">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="brand/logo-dark.png">
-      <img src="brand/logo-light.png" alt="Rodage" width="320">
+      <img src="brand/logo-light.png" alt="Rodage" width="300">
     </picture>
   </a>
 </p>
 
-<p align="center"><strong>Burn-in, proven.</strong><br>Open, vendor-neutral test execution for GPU data centers.</p>
+Every new GPU rack gets burned in before it goes live. The results usually end up spread across log files, spreadsheets and screenshots, and a few months later nobody can say which serial failed which test, or why a tray was swapped.
 
-<p align="center">
-  <a href="https://vjoise.github.io/rodage/"><img src="https://img.shields.io/badge/website-vjoise.github.io%2Frodage-e8532a" alt="Website"></a>
-  <img src="https://img.shields.io/badge/status-early%20development-f59a3c" alt="Status: early development">
-  <a href="https://github.com/vjoise/rodage/discussions"><img src="https://img.shields.io/badge/discussions-join-2e9d62" alt="Discussions"></a>
-</p>
+Rodage is my attempt to fix that. You describe your racks once, run your burn-in tests with one command, and see the results on a drawing of the actual rack, down to the GPU, drive or power supply that failed. Every run is kept as a record you can look back at, or hand to a customer or a vendor.
 
----
-
-**Rodage** runs burn-in tests on GPU racks, shows every result on the rack and the exact part that failed, and leaves a record you can hand to a customer, a vendor or an auditor.
-
-*Rodage* (roh-DAHZH) is French for **breaking in**, the running-in of new machinery before it goes to work.
-
-## How it works
-
-| Step | What happens |
-| --- | --- |
-| **Define** | Describe the floor, racks and cabling in YAML, or import them from NetBox or a spreadsheet. Shapes such as DGX B200 and GB200 NVL72 come from a shared catalog. |
-| **Run** | Run a versioned burn-in profile on a host, rack or row with `rdg run`. Rodage drives DCGM, NCCL tests, nvme-cli and Redfish. |
-| **See** | Each tray, GPU, drive and power supply turns green, amber or red on a drawing of the rack, with the error and its history one click away. |
-| **Prove** | Every run becomes an append-only record with serials, firmware and log hashes, ready for acceptance, RMA or supplier handover. |
+It's meant to sit on top of the tools you already use: DCGM, NCCL tests, nvme-cli and Redfish for testing, and NetBox or a spreadsheet for knowing what's where.
 
 ```console
 $ rdg run rack B02 --profile gb200-burnin
@@ -37,16 +20,14 @@ $ rdg run rack B02 --profile gb200-burnin
   power-redundancy  48/48 PSUs   pass
 ```
 
-## Who it's for
+## Where it stands
 
-DC Ops teams at GPU clouds, colocation providers, HPC and research centers, and system integrators who ship racks with burn-in evidence.
+It's early. I have a working prototype of the rack and parts view, and test execution is what I'm building next. The code will go up here, open source, once the first version is usable. For now this repo holds the [website](https://vjoise.github.io/rodage/).
 
-## Status
+## Why "rodage"?
 
-Early development. A prototype covers the site definition, the rack and FRU console and a validator; test execution is next. The code will be published here under Apache 2.0 when v0.1 is ready.
+It's French for breaking in: running a new engine gently before you work it hard. That's what burn-in is for servers.
 
-If you run GPU hardware and want to shape what gets built, say hello in [Discussions](https://github.com/vjoise/rodage/discussions).
+## Say hello
 
-## This repository
-
-This repository currently holds the [project website](https://vjoise.github.io/rodage/). The logo and social preview are in [`brand/`](brand/).
+If you look after GPU hardware and this sounds familiar, I'd like to hear how you handle it today. Start a thread in [Discussions](https://github.com/vjoise/rodage/discussions).
