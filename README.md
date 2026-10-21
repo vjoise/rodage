@@ -9,15 +9,17 @@
 
 Every new GPU rack gets burned in before it goes live. The results usually end up spread across log files, spreadsheets and screenshots, and a few months later nobody can say which serial failed which test, or why a tray was swapped.
 
-Rodage is my attempt to fix that. You describe your racks once, run your burn-in tests with one command, and see the results on a drawing of the actual rack, down to the GPU, drive or power supply that failed. Every run is kept as a record you can look back at, or hand to a customer or a vendor.
+Rodage is my attempt to fix that. It's a service that schedules tests wherever you need them: a whole building, a hall, a row, a single rack or one host. The results show up at every level too. You can start from the building, see which racks have problems, open a rack, then a host, and end up at the exact GPU, drive or power supply that failed. Every run is kept as a record you can look back at, or hand to a customer or a vendor.
 
 It's meant to sit on top of the tools you already use: DCGM, NCCL tests, nvme-cli and Redfish for testing, and NetBox or a spreadsheet for knowing what's where.
 
 ```console
-$ rdg run rack B02 --profile gb200-burnin
-  gpu-diagnostics   72/72 GPUs   pass
-  nccl-allreduce    18/18 trays  warn  b02-ct5 gpu2 at 90.5%
-  power-redundancy  48/48 PSUs   pass
+$ rdg schedule rack B02 --profile gb200-burnin --at 22:00
+$ rdg schedule host b02-ct5 --profile gpu-recheck
+$ rdg status hall H1
+  B01  pass
+  B02  1 warning   b02-ct5 gpu2 at 90.5% of fleet bandwidth
+  B03  running     stage 2 of 4
 ```
 
 ## Where it stands

@@ -76,6 +76,11 @@
     .steps h3 { font-size: 22px; margin-bottom: 8px; }
     .steps p { margin: 0; color: var(--muted); font-size: 15px; }
 
+    .levels { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 12px; }
+    .levels div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; position: relative; }
+    .levels div:not(:last-child)::after { content: "→"; position: absolute; right: -11px; top: 18px; color: var(--ember); font-weight: 700; }
+    .levels span { font-family: "Space Grotesk"; font-weight: 700; font-size: 17px; }
+    .levels p { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
     .split { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 40px; align-items: start; }
     pre { background: var(--code-bg); color: var(--code-text); border-radius: 14px; padding: 22px; font-size: 13.5px; line-height: 1.65; overflow-x: auto; margin: 0; }
     pre .c { color: #8c8278; } pre .k { color: #f59a3c; } pre .s { color: #9fd4a8; } pre .p { color: #e8532a; }
@@ -104,7 +109,8 @@
 
     @media (max-width: 900px) {
       .hero, .split, .status { grid-template-columns: minmax(0,1fr); }
-      .problem, .features { grid-template-columns: minmax(0,1fr); }
+      .problem, .features, .levels { grid-template-columns: minmax(0,1fr); }
+      .levels div:not(:last-child)::after { content: "↓"; right: 18px; top: auto; bottom: -16px; }
       .steps, .who { grid-template-columns: 1fr 1fr; gap: 28px; }
       nav .links { display: none; }
     }
@@ -116,14 +122,14 @@
   <div class="wrap">
     <nav>
       <a class="logo" href="#"><img src="brand/logo.svg" width="30" height="30" alt="">Rodage</a>
-      <div class="links"><a href="#how">How it works</a><a href="#features">Features</a><a href="#who">Who it's for</a><a href="#status">Status</a></div>
+      <div class="links"><a href="#how">How it works</a><a href="#levels">Levels</a><a href="#features">Features</a><a href="#who">Who it's for</a><a href="#status">Status</a></div>
     </nav>
 
     <header class="hero">
       <div>
         <span class="eyebrow">Open source · Vendor-neutral · For DC Ops</span>
         <h1>Burn-in,<br><span>proven.</span></h1>
-        <p class="lead">Rodage runs burn-in tests on your GPU racks, shows every result on the rack and the exact part, and leaves a record you can hand to a customer, a vendor or an auditor.</p>
+        <p class="lead">Rodage schedules burn-in and health tests on a whole building, a rack or a single host, and shows the results at every level, from the building down to the GPU that failed.</p>
         <div class="cta">
           <a class="btn primary" href="https://github.com/vjoise/rodage">Follow on GitHub</a>
           <a class="btn ghost" href="#how">See how it works</a>
@@ -134,7 +140,7 @@
       <div class="rack-card" aria-label="Animated example of a burn-in run on a GB200 NVL72 rack">
         <div class="bar"><span>Rack <b>B02</b> · GB200 NVL72</span><span id="progress">stage 1 of 4</span></div>
         <svg id="rack" viewBox="0 0 300 380" role="img" aria-label="Rack elevation with trays changing color as tests complete"></svg>
-        <div class="stage" id="stage">$ rdg run rack B02 --profile gb200-burnin</div>
+        <div class="stage" id="stage">$ rdg schedule rack B02 --profile gb200-burnin</div>
         <div class="legend"><span><i style="background:var(--ok)"></i>Passed</span><span><i style="background:var(--warn)"></i>Warning</span><span><i style="background:var(--fail)"></i>Failed</span><span><i style="background:var(--tray)"></i>Pending</span></div>
       </div>
     </header>
@@ -162,9 +168,25 @@
       </div>
       <div class="steps">
         <div><h3>Define</h3><p>Describe the floor, racks and cabling in plain YAML, or import them from NetBox or a spreadsheet. Shapes such as DGX B200 or GB200 NVL72 come from a shared catalog.</p></div>
-        <div><h3>Run</h3><p>Pick a burn-in profile and run it on a host, a rack or a row. Rodage drives the tools you already trust: DCGM, NCCL tests, nvme-cli and Redfish.</p></div>
+        <div><h3>Schedule</h3><p>Pick a test profile and a target: a building, a hall, a row, a rack or one host. Run it now or put it on a schedule. Rodage drives the tools you already use: DCGM, NCCL tests, nvme-cli and Redfish.</p></div>
         <div><h3>See</h3><p>Results land on the rack as you watch. Each tray, GPU, drive and power supply turns green, amber or red, with the error and its history one click away.</p></div>
         <div><h3>Prove</h3><p>Every run becomes an append-only record with serials, firmware and log hashes: an acceptance report, an RMA packet or a supplier handover.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="levels">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>From the building down to the part</h2>
+        <p>Every test result rolls up. Start with the whole site and follow the red until you're holding the part that needs replacing.</p>
+      </div>
+      <div class="levels">
+        <div><span>Building</span><p>Which halls have open failures, and how far along today's burn-in is.</p></div>
+        <div><span>Hall and row</span><p>A floor plan with every rack colored by its latest results.</p></div>
+        <div><span>Rack</span><p>The rack drawn as it really is, tray by tray, with each test stage.</p></div>
+        <div><span>Host</span><p>The server or tray drawn as its parts: GPUs, drives, NICs, power supplies.</p></div>
+        <div><span>Part</span><p>Serial, test history, swaps and tickets, and whether you can replace it yourself.</p></div>
       </div>
     </div>
   </section>
@@ -192,7 +214,7 @@
       <span class="k">fail</span>: { <span class="k">busBw</span>: <span class="s">"&lt; 85% of fleet median"</span> }
     - <span class="k">name</span>: power-redundancy
       <span class="k">tool</span>: redfish-psu-check</pre>
-<pre class="terminal"><span class="p">$</span> rdg run rack B02 --profile gb200-burnin
+<pre class="terminal"><span class="p">$</span> rdg schedule rack B02 --profile gb200-burnin --at 22:00
 <span class="c">  gpu-diagnostics   72/72 GPUs   </span><span class="s">pass</span>
 <span class="c">  nccl-allreduce    18/18 trays  </span><span class="k">warn</span><span class="c">  b02-ct5 gpu2 at 90.5%</span>
 <span class="c">  power-redundancy  48/48 PSUs   </span><span class="s">pass</span>
